@@ -72,10 +72,25 @@ class AssertsScheduleLoadTest extends TestCase {
     }
 
     public function test_tasks_that_do_not_repeat_every_hour_are_left_out_of_the_budget(): void {
-        $schedule = $this->scheduleOf(array_fill(0, 20, '0 3 * * *'));
+        $schedule = $this->scheduleOf([...array_fill(0, 20, '0 3 * * *'), '0 * * * *']);
 
         $this->assertNoMinuteCarriesMoreThan(self::MAX_TASKS_PER_MINUTE, $this->hourlyRecurringLoad($schedule));
-        $this->assertSame(20, $this->scheduleLoad($schedule)->at(0)->tasks);
+        $this->assertSame(1, $this->hourlyRecurringLoad($schedule)->at(0)->tasks);
+        $this->assertSame(21, $this->scheduleLoad($schedule)->at(0)->tasks);
+    }
+
+    public function test_a_budget_assertion_refuses_to_pass_on_an_empty_schedule(): void {
+        $this->expectException(AssertionFailedError::class);
+        $this->expectExceptionMessage('The schedule carries no tasks');
+
+        $this->assertNoMinuteCarriesMoreThan(self::MAX_TASKS_PER_MINUTE, $this->hourlyRecurringLoad(new Schedule()));
+    }
+
+    public function test_an_outlier_assertion_refuses_to_pass_on_an_empty_schedule(): void {
+        $this->expectException(AssertionFailedError::class);
+        $this->expectExceptionMessage('The schedule carries no tasks');
+
+        $this->assertTopOfTheHourIsNotAnOutlier($this->hourlyRecurringLoad(new Schedule()));
     }
 
     public function test_it_orders_a_pipeline_of_commands(): void {

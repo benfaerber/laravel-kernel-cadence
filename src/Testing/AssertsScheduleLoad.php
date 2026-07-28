@@ -18,6 +18,8 @@ use Illuminate\Console\Scheduling\Schedule;
 trait AssertsScheduleLoad {
     /** No single clock minute may carry more than $limit every-hour tasks. */
     public function assertNoMinuteCarriesMoreThan(int $limit, ScheduleLoad $load): void {
+        $this->assertScheduleWasMeasured($load);
+
         $peak = $load->peak();
 
         $this->assertLessThanOrEqual(
@@ -36,6 +38,8 @@ trait AssertsScheduleLoad {
 
     /** The named minute may not carry more than $factor times the hourly average. */
     public function assertMinuteIsNotAnOutlier(int $minute, ScheduleLoad $load, float $factor = 2.0): void {
+        $this->assertScheduleWasMeasured($load);
+
         $mean = $load->mean();
         $actual = $load->at($minute);
 
@@ -73,6 +77,20 @@ trait AssertsScheduleLoad {
             $second,
             $first,
             sprintf('%s (:%02d) must run before %s (:%02d).', $earlier, $first, $later, $second),
+        );
+    }
+
+    /**
+     * A budget assertion against an empty schedule passes without measuring
+     * anything, which is worse than no test at all. Usually it means the
+     * schedule was read from the container before artisan populated it.
+     */
+    public function assertScheduleWasMeasured(ScheduleLoad $load): void {
+        $this->assertGreaterThan(
+            0,
+            $load->totalTasks(),
+            'The schedule carries no tasks, so there is nothing to hold to a budget. '
+            . 'Build it with ApplicationSchedule::resolve($this->app) rather than resolving Schedule directly.',
         );
     }
 

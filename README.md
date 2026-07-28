@@ -132,6 +132,7 @@ the stampede the rest of the day; pass `--all` to count everything.
 ### As a test
 
 ```php
+use Faerber\KernelCadence\Scheduling\ApplicationSchedule;
 use Faerber\KernelCadence\Testing\AssertsScheduleLoad;
 use Illuminate\Console\Scheduling\Schedule;
 
@@ -143,19 +144,30 @@ class ScheduleLoadDistributionTest extends TestCase {
     public function test_no_single_minute_carries_a_disproportionate_share(): void {
         $this->assertNoMinuteCarriesMoreThan(
             self::MAX_TASKS_PER_MINUTE,
-            $this->hourlyRecurringLoad($this->app->make(Schedule::class)),
+            $this->hourlyRecurringLoad($this->schedule()),
         );
     }
 
     public function test_the_top_of_the_hour_is_not_an_outlier(): void {
-        $this->assertTopOfTheHourIsNotAnOutlier($this->hourlyRecurringLoad($this->app->make(Schedule::class)));
+        $this->assertTopOfTheHourIsNotAnOutlier($this->hourlyRecurringLoad($this->schedule()));
     }
 
     public function test_the_import_pipeline_stays_ordered(): void {
-        $this->assertRunsBefore('cron:orderRawImport', 'cron:orderImport', $this->app->make(Schedule::class));
+        $this->assertRunsBefore('cron:orderRawImport', 'cron:orderImport', $this->schedule());
+    }
+
+    private function schedule(): Schedule {
+        return ApplicationSchedule::resolve($this->app);
     }
 }
 ```
+
+Use `ApplicationSchedule::resolve()` rather than resolving `Schedule` from the container yourself.
+On Laravel 11 and 12 the schedule lives in a `withSchedule()` callback that only runs once artisan
+starts, so a test that reads the container binding directly measures an **empty** schedule and
+passes without checking anything. `ApplicationSchedule` starts artisan first, so both the Laravel 10
+kernel style and the newer callback style are present. As a backstop, the budget assertions
+themselves fail if the schedule they were handed carries no tasks at all.
 
 A failure prints the minute, the count and the whole histogram, so you can see where the room is:
 

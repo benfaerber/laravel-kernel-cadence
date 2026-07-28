@@ -10,5 +10,7 @@ First release, grown out of the `Cadence` class posted on
 - `CadenceSpread`, which divides one interval into evenly phased lanes that never share a minute.
 - `everyMinutes()`, `offsetBy()` and `cadence()` macros on `Illuminate\Console\Scheduling\Event`.
 - `ScheduleLoad`, a per-minute histogram of the schedule, and `MinuteLoad`.
-- `AssertsScheduleLoad`, assertions holding a schedule to a per-minute task budget.
+- `AssertsScheduleLoad`, assertions holding a schedule to a per-minute task budget, which refuse to
+  pass on a schedule that carries no tasks.
+- `ApplicationSchedule`, resolving the real schedule on Laravel 10, 11 and 12 alike.
 - `schedule:load --max=N`, the same budget as a CI check.
