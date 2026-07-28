@@ -25,6 +25,7 @@ class CronFieldsTest extends TestCase {
         );
     }
 
+    /** @return array<string, array{string, int, string}> */
     public static function laravelExpressions(): array {
         return [
             'everyFiveMinutes' => ['*/5 * * * *', 3, '3-59/5 * * * *'],
@@ -46,11 +47,13 @@ class CronFieldsTest extends TestCase {
         );
     }
 
+    /** @param class-string $type */
     #[DataProvider('minuteFields')]
     public function test_it_recognizes_the_shape_of_a_minute_field(string $expression, string $type): void {
         $this->assertInstanceOf($type, CronFields::parse($expression)->minuteField());
     }
 
+    /** @return list<array{string, class-string}> */
     public static function minuteFields(): array {
         return [
             ['* * * * *', EveryMinute::class],

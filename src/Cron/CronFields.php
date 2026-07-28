@@ -25,7 +25,7 @@ final readonly class CronFields implements Stringable {
             throw UnsupportedMinuteField::notFiveFields($expression, count($fields));
         }
 
-        return new self(array_values($fields));
+        return new self($fields);
     }
 
     public function minuteField(): MinuteField {

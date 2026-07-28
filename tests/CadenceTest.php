@@ -27,6 +27,7 @@ class CadenceTest extends TestCase {
         $this->assertSame('8-59/15 * * * *', (string) Cadence::everyMinutes(15, offsetBy: 8));
     }
 
+    /** @param list<int> $expected */
     #[DataProvider('cadences')]
     public function test_it_fires_on_the_expected_minutes(int $interval, int $offset, array $expected): void {
         $cadence = Cadence::everyMinutes($interval, $offset);
@@ -36,6 +37,7 @@ class CadenceTest extends TestCase {
         $this->assertSame($expected, $cadence->minutes());
     }
 
+    /** @return array<string, array{int, int, list<int>}> */
     public static function cadences(): array {
         return [
             'every 15, offset 8' => [15, 8, [8, 23, 38, 53]],
@@ -56,15 +58,20 @@ class CadenceTest extends TestCase {
         $this->assertSame(4, $cadence->firesPerHour());
     }
 
+    /** @return list<array{int}> */
     public static function offsets(): array {
         return array_map(fn (int $offset) => [$offset], range(0, 14));
     }
 
     #[DataProvider('namedCadences')]
     public function test_the_named_constructors_mirror_the_laravel_helpers(string $method, string $expected): void {
-        $this->assertSame($expected, Cadence::{$method}(1)->expression());
+        $cadence = Cadence::{$method}(1);
+
+        $this->assertInstanceOf(Cadence::class, $cadence);
+        $this->assertSame($expected, $cadence->expression());
     }
 
+    /** @return list<array{string, string}> */
     public static function namedCadences(): array {
         return [
             ['everyTwoMinutes', '1-59/2 * * * *'],

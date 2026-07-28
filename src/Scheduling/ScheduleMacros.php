@@ -20,15 +20,16 @@ use Illuminate\Console\Scheduling\Event;
  */
 final readonly class ScheduleMacros {
     public static function register(): void {
-        $macros = new self();
-
-        $macros->define('cadence', $macros->cadence());
-        $macros->define('everyMinutes', $macros->everyMinutes());
-        $macros->define('offsetBy', $macros->offsetBy());
+        self::define('cadence', self::cadence());
+        self::define('everyMinutes', self::everyMinutes());
+        self::define('offsetBy', self::offsetBy());
     }
 
-    /** Applies a prebuilt Cadence, replacing whatever frequency was set. */
-    private function cadence(): Closure {
+    /**
+     * Each macro body is built in a static context on purpose: a macro closure is
+     * rebound to the Event it is called on, so $this must not already be bound.
+     */
+    private static function cadence(): Closure {
         return function (Cadence $cadence): Event {
             /** @var Event $this */
             return $this->cron($cadence->expression());
@@ -36,7 +37,7 @@ final readonly class ScheduleMacros {
     }
 
     /** The offset parameter the framework's every-N-minutes helpers do not take. */
-    private function everyMinutes(): Closure {
+    private static function everyMinutes(): Closure {
         return function (int $interval, int $offsetBy = 0): Event {
             /** @var Event $this */
             return $this->cron(Cadence::everyMinutes($interval, $offsetBy)->expression());
@@ -47,7 +48,7 @@ final readonly class ScheduleMacros {
      * Re-phases the frequency already on the event, so the framework's own
      * helpers stay usable: everyFifteenMinutes()->offsetBy(7), hourly()->offsetBy(7).
      */
-    private function offsetBy(): Closure {
+    private static function offsetBy(): Closure {
         return function (int $minutes): Event {
             /** @var Event $this */
             return $this->cron(
@@ -56,7 +57,7 @@ final readonly class ScheduleMacros {
         };
     }
 
-    private function define(string $name, Closure $macro): void {
+    private static function define(string $name, Closure $macro): void {
         if (method_exists(Event::class, $name) || Event::hasMacro($name)) {
             return;
         }

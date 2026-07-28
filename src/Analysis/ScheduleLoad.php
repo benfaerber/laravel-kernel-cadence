@@ -23,7 +23,7 @@ final readonly class ScheduleLoad {
     /** Any instant works; the schedule shape within an hour is what matters. */
     private const REFERENCE_HOUR = '2026-01-01 00:%02d:00';
 
-    /** @param array<int, int> $tasksByMinute */
+    /** @param non-empty-array<int, int> $tasksByMinute one entry per minute of the hour */
     private function __construct(private array $tasksByMinute) {
     }
 

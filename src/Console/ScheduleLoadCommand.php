@@ -6,6 +6,7 @@ use Faerber\KernelCadence\Analysis\MinuteLoad;
 use Faerber\KernelCadence\Analysis\ScheduleLoad;
 use Illuminate\Console\Command;
 use Illuminate\Console\Scheduling\Schedule;
+use InvalidArgumentException;
 
 /**
  * Prints the per-minute load of the real schedule, and optionally fails when a
@@ -51,13 +52,13 @@ final class ScheduleLoadCommand extends Command {
     }
 
     private function verdict(ScheduleLoad $load): int {
-        $limit = $this->option('max');
+        $limit = $this->limit();
 
         if ($limit === null) {
             return self::SUCCESS;
         }
 
-        $over = $load->exceeding((int) $limit);
+        $over = $load->exceeding($limit);
 
         if ($over === []) {
             $this->info("No minute carries more than {$limit} tasks.");
@@ -67,10 +68,27 @@ final class ScheduleLoadCommand extends Command {
 
         $this->error(sprintf(
             'These minutes exceed the limit of %d: %s',
-            (int) $limit,
+            $limit,
             implode(', ', array_map(fn (MinuteLoad $minute): string => (string) $minute, $over)),
         ));
 
         return self::FAILURE;
+    }
+
+    /** A budget that is not a whole number of tasks is a typo, not a limit of zero. */
+    private function limit(): ?int {
+        $max = $this->option('max');
+
+        if ($max === null) {
+            return null;
+        }
+
+        if (! is_string($max) || ! ctype_digit($max)) {
+            throw new InvalidArgumentException(
+                '--max must be a whole number of tasks, got ' . json_encode($max) . '.',
+            );
+        }
+
+        return (int) $max;
     }
 }

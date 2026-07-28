@@ -115,7 +115,9 @@ trait AssertsScheduleLoad {
 
             $minutes = $this->minutesFiring($event->expression);
 
-            $this->assertNotEmpty($minutes, "{$command} never fires within an hour.");
+            if ($minutes === []) {
+                $this->fail("{$command} never fires within an hour.");
+            }
 
             return min($minutes);
         }

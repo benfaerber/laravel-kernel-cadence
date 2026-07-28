@@ -7,3 +7,38 @@ parameters:
     paths:
         - src
         - tests
+    ignoreErrors:
+        # A macro body is a closure that Macroable rebinds to the Event it is
+        # called on, so $this is an Event at run time and undefined where the
+        # closure is written. Static analysis cannot see either side of that.
+        -
+            identifier: variable.undefined
+            path: src/Scheduling/ScheduleMacros.php
+        -
+            identifier: varTag.variableNotFound
+            path: src/Scheduling/ScheduleMacros.php
+        -
+            identifier: method.nonObject
+            path: src/Scheduling/ScheduleMacros.php
+        -
+            identifier: property.nonObject
+            path: src/Scheduling/ScheduleMacros.php
+        -
+            identifier: return.type
+            path: src/Scheduling/ScheduleMacros.php
+        -
+            identifier: argument.type
+            path: src/Scheduling/ScheduleMacros.php
+        # Event gains everyMinutes(), offsetBy() and cadence() at run time, so
+        # calling them in a test is an undefined method as far as analysis knows.
+        -
+            identifier: method.notFound
+            paths:
+                - tests/Scheduling/ScheduleMacrosTest.php
+                - tests/Scheduling/ApplicationScheduleTest.php
+        -
+            identifier: method.nonObject
+            path: tests/Scheduling/ScheduleMacrosTest.php
+        -
+            identifier: property.nonObject
+            path: tests/Scheduling/ScheduleMacrosTest.php
