@@ -1,0 +1,9 @@
+parameters:
+    level: 10
+    parallel:
+        jobSize: 100
+        maximumNumberOfProcesses: 32
+        minimumNumberOfJobsPerProcess: 2
+    paths:
+        - src
+        - tests

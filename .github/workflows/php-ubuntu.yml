@@ -1,0 +1,66 @@
+name: Ubuntu PHP Tests
+
+on:
+  push:
+    branches: [ "master", "develop" ]
+  pull_request:
+    branches: [ "master", "develop" ]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        php-version: [8.2, 8.3, 8.4]
+        laravel: [10.*, 11.*, 12.*]
+        exclude:
+          - php-version: 8.2
+            laravel: 12.*
+
+    name: PHP ${{ matrix.php-version }} / Laravel ${{ matrix.laravel }}
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: "Install PHP"
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: "${{ matrix.php-version }}"
+
+    - name: Validate composer.json
+      run: composer validate --no-check-lock
+
+    - name: Cache Composer packages
+      uses: actions/cache@v4
+      with:
+        path: vendor
+        key: ${{ runner.os }}-php-${{ matrix.php-version }}-laravel-${{ matrix.laravel }}-${{ hashFiles('**/composer.json') }}
+        restore-keys: |
+          ${{ runner.os }}-php-${{ matrix.php-version }}-
+
+    - name: Pin the Laravel version
+      run: composer require "illuminate/console:${{ matrix.laravel }}" "illuminate/support:${{ matrix.laravel }}" --no-update
+
+    - name: Install Composer Dependencies
+      run: composer update --prefer-dist --no-progress
+
+    - name: Verify Formatting
+      if: matrix.laravel == '12.*'
+      run: PHP_CS_FIXER_IGNORE_ENV=true ./vendor/bin/php-cs-fixer check
+
+    - name: Verify phpstan
+      if: matrix.laravel == '12.*'
+      run: composer analyze
+
+    - name: Run phpunit tests
+      run: ./vendor/bin/phpunit
+
+    - name: Show PHPUnit logs on failure
+      if: failure()
+      run: cat phpunit-testdox.txt || echo "No TestDox logs found"
