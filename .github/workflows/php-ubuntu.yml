@@ -22,6 +22,13 @@ jobs:
         exclude:
           - php-version: 8.2
             laravel: 12.*
+        include:
+          - laravel: 10.*
+            testbench: 8.*
+          - laravel: 11.*
+            testbench: 9.*
+          - laravel: 12.*
+            testbench: 10.*
 
     name: PHP ${{ matrix.php-version }} / Laravel ${{ matrix.laravel }}
 
@@ -45,7 +52,14 @@ jobs:
           ${{ runner.os }}-php-${{ matrix.php-version }}-
 
     - name: Pin the Laravel version
-      run: composer require "illuminate/console:${{ matrix.laravel }}" "illuminate/support:${{ matrix.laravel }}" --no-update
+      run: |
+        composer require "illuminate/console:${{ matrix.laravel }}" "illuminate/support:${{ matrix.laravel }}" --no-update
+        composer require --dev "orchestra/testbench:${{ matrix.testbench }}" --no-update
+
+    # Older framework versions carry published advisories; they are installed
+    # here only to run the test matrix against them, never shipped.
+    - name: Allow framework versions with published advisories
+      run: composer config policy.advisories.block false
 
     - name: Install Composer Dependencies
       run: composer update --prefer-dist --no-progress
