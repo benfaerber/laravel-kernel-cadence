@@ -3,6 +3,7 @@
 namespace Faerber\KernelCadence\Tests\Scheduling;
 
 use Faerber\KernelCadence\Cadence;
+use Faerber\KernelCadence\Cron\CronFields;
 use Faerber\KernelCadence\Exceptions\InvalidOffset;
 use Faerber\KernelCadence\Exceptions\UnsupportedMinuteField;
 use Faerber\KernelCadence\Tests\TestCase;
@@ -32,7 +33,12 @@ class ScheduleMacrosTest extends TestCase {
     public function test_offset_by_rephases_a_framework_helper_in_place(): void {
         $this->assertSame('7-59/15 * * * *', $this->command()->everyFifteenMinutes()->offsetBy(7)->expression);
         $this->assertSame('3-59/5 * * * *', $this->command()->everyFiveMinutes()->offsetBy(3)->expression);
-        $this->assertSame('7-59/30 * * * *', $this->command()->everyThirtyMinutes()->offsetBy(7)->expression);
+
+        // Laravel 10 writes everyThirtyMinutes() as '0,30', later versions as '*/30',
+        // so hold the rephased helper to its firing minutes rather than its spelling.
+        $expression = $this->command()->everyThirtyMinutes()->offsetBy(7)->expression;
+        $this->assertIsString($expression);
+        $this->assertSame([7, 37], CronFields::parse($expression)->minuteField()->minutes());
     }
 
     public function test_offset_by_turns_hourly_into_hourly_at(): void {
